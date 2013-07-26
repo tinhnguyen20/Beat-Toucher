@@ -1,0 +1,66 @@
+import java.awt.Rectangle;
+
+public class RedSpot{
+  
+  
+ private float xPos;
+ private float yPos;
+ private int duration;
+ private float radius;
+ private boolean visible;
+ private boolean deadly;
+ 
+ public RedSpot(float xPos, float yPos, float radius){
+   this.xPos = xPos;
+   this.yPos = yPos;
+   this.radius = radius;
+   visible = true;
+   duration = 70;
+   deadly = false;
+   
+   
+ }
+ 
+ public float getX(){
+  return xPos; 
+ }
+ 
+ public float getY(){
+  return yPos; 
+ }
+ 
+ public float getRadius(){
+   return radius;
+ }
+ 
+ public boolean isVisible(){
+   return visible; 
+ }
+ 
+ public void setVisible(boolean vis){
+   visible = vis; 
+ }
+ 
+ public void setDeadly(boolean deadly){
+  this.deadly = deadly; 
+ }
+ 
+ public int getRemainingDuration(){
+   return duration; 
+ }
+ 
+ public void minusTime(){
+  duration--; 
+ }
+ 
+ public boolean isDeadly(){
+  return deadly; 
+ }
+ 
+ public Rectangle getBounds(){
+  return new Rectangle((int)(xPos - radius), (int)(yPos - radius),(int)(2*radius),(int)(2*radius));
+ }
+ 
+ 
+  
+}
