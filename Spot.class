@@ -1,0 +1,55 @@
+import java.awt.Rectangle;
+
+public class Spots{
+  
+  
+ private float xPos;
+ private float yPos;
+ private int duration;
+ private float radius;
+ private boolean visible;
+ 
+ public Spots(float xPos, float yPos, float radius){
+   this.xPos = xPos;
+   this.yPos = yPos;
+   this.radius = radius;
+   visible = true;
+   duration = 20;
+   
+   
+ }
+ 
+ public float getX(){
+  return xPos; 
+ }
+ 
+ public float getY(){
+  return yPos; 
+ }
+ 
+ public float getRadius(){
+   return radius;
+ }
+ 
+ public boolean isVisible(){
+   return visible; 
+ }
+ 
+ public void setVisible(boolean vis){
+   visible = vis; 
+ }
+
+ 
+ public int getRemainingDuration(){
+   return duration; 
+ }
+ 
+ public void minusTime(){
+  duration--; 
+ }
+ 
+  public Rectangle getBounds(){
+  return new Rectangle((int)(xPos - radius), (int)(yPos - radius),(int)(2*radius),(int)(2*radius));
+ }
+  
+}
