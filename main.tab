@@ -1,0 +1,275 @@
+//The MIT License (MIT) - See Licence.txt for details
+//Copyright (c) 2013 Mick Grierson, Matthew Yee-King, Marco Gillies
+import java.util.ArrayList;
+
+Maxim maxim;
+AudioPlayer player;
+float power = 0.0;
+float threshold = 0.1;
+double red_spot_spawn = 0.05;
+int white_wait = 0;
+int red_wait = 0;
+int w = 960; //width
+int h = 640; //height
+int score = 0;
+int time = 0;
+int red_spawn_time = 80;
+
+
+
+
+Button start_button = new Button("Start", w/2 , h/2 , 60, 30);
+//start_button.setImage("start.png");
+
+ArrayList<Spots> spots;
+ArrayList<RedSpot> red_spots;
+
+boolean mouseDragged = false;
+boolean playing = false;
+boolean gameStarted = false;
+boolean showGUI = true;
+boolean won = false;
+
+
+void setup()
+{
+  spots = new ArrayList<Spots>();
+  red_spots = new ArrayList<RedSpot>();
+  size(960, 640);
+  frameRate(60);
+  maxim = new Maxim(this);
+  player = maxim.loadFile("standbymeMONO.wav");
+  player.setLooping(true);
+  player.setAnalysing(true);
+  player.volume(0.25);
+  background(0);
+  rectMode(CENTER);
+  //
+  
+  
+  
+
+}
+
+void draw()
+{
+  
+  if(showGUI){
+   
+   displayTitle();
+   textSize(20);
+   start_button.display(); 
+  }
+  
+  // display score in top left
+  if(playing && gameStarted){
+    player.play();
+    fill(255);
+    textSize(20);
+    textAlign(LEFT);
+    text("Score: " + score, 10, 20);
+    if(power > threshold){
+    //background(0);
+    }
+  
+  // increase the spawn rate every 750 points the user gets
+  if(score % 750 == 0){
+    double add_spawn = score/750;
+    red_spot_spawn += .001 * add_spawn;
+    red_spawn_time -= 1;
+  }
+  
+  
+  // player still alive and song over -> Display EndScore
+  if(player.songOver() && playing){
+    displayEndScore();
+    playing = false;
+  }
+  
+  
+  // add a Spot if it is over threshold and delay is over. 
+  power = player.getAveragePower();
+  if(power > threshold && white_wait > 30){
+   background(0);
+   float rX = (float)(Math.random());
+   float rY = (float)(Math.random());
+   //println("MAKING SPOT");
+   spots.add(new Spots(rX * w, rY * h, 50.0));
+   for(int i = 0; i < spots.size(); i++){
+     
+     // delete if timer is done
+     if(spots.get(i).getRemainingDuration() == 0){
+       spots.get(i).setVisible(false); 
+     }
+     
+     //remove if not visible
+     if(!spots.get(i).isVisible()){
+       //println("++++++++++++++++++");
+       spots.remove(i);
+       i--;
+     }
+     else{
+       //draw ellipse
+     ellipse(spots.get(i).getX(), spots.get(i).getY(), spots.get(i).getRadius(), spots.get(i).getRadius());  
+     spots.get(i).minusTime();
+     
+     }
+   }
+   white_wait = 0;
+  }
+  
+  // check for collisions with the white spots
+  Rectangle mouse_bounds = new Rectangle(mouseX - 1, mouseY - 1, 2, 2);
+  for(Spots white_spot:spots){
+    // mouse hits the white spot
+    if(mouse_bounds.intersects(white_spot.getBounds()) && white_spot.isVisible() && mouseDragged){
+     score += 50;
+     white_spot.setVisible(false); 
+    }
+  }
+  
+  
+  // spawn RedSpot
+  // generates spot
+  double spawn = Math.random(); //determines if spot is spawned
+  double randX = Math.random() * 200; // determines how far spot is from mousePos
+  double randY = Math.random() * 200;
+  double pos_neg = Math.random();
+  if(pos_neg >= .5){
+   randX = (-1) * randX;
+   randY = (-1) * randY; 
+  }
+  if(red_spot_spawn >= spawn && red_wait > red_spawn_time){
+    red_spots.add(new RedSpot((float)(mouseX + randX), (float)(mouseY + randY), 30));
+    //red_spots.add(new RedSpot((float)(Math.random() * w), (float)(Math.random() * h), 30));
+    red_wait = 0;
+  }
+  
+  for(RedSpot red_spot:red_spots){
+    // not visible -> remove
+    // red_spot becomes deadly after 20 frames
+    if(red_spot.getRemainingDuration() == 40){
+     red_spot.setDeadly(true);
+    }
+    
+    
+    //out of time -> remove
+   if(red_spot.getRemainingDuration() == 0){
+    red_spot.setVisible(false);
+   } 
+   
+   if(!red_spot.isVisible()){
+    red_spots.remove(red_spots); 
+   }
+   else{ 
+    if(red_spot.isDeadly()){ 
+     fill(255,0,0);
+     ellipse(red_spot.getX(), red_spot.getY(),red_spot.getRadius(), red_spot.getRadius());
+     red_spot.minusTime(); 
+   }
+   else{
+     fill(0,255,0);
+     ellipse(red_spot.getX(), red_spot.getY(),red_spot.getRadius(), red_spot.getRadius());
+     red_spot.minusTime();
+
+   }
+  }
+  // checks if mouse hit red spot
+  if(mouse_bounds.intersects(red_spot.getBounds()) && red_spot.isVisible() && red_spot.isDeadly() && mouseDragged){
+   playing = false;
+    
+  }
+  }
+  white_wait++;
+  red_wait++;
+  //println(time);
+  time++;
+}
+else if(!playing && gameStarted){
+ displayGameOver(); 
+  
+}
+
+}
+
+void mouseDragged()
+{
+  if(playing){
+  mouseDragged = true;
+  float red = map(mouseX, 0, width, 0, 255);
+  float blue = map(mouseY, 0, width, 0, 255);
+  float green = dist(mouseX,mouseY,width/2,height/2);
+  
+  float speed = dist(pmouseX, pmouseY, mouseX, mouseY);
+  float alpha = map(speed, 0, 20, 0, 10);
+  //println(alpha);
+  float lineWidth = map(speed, 0, 10, 10, 1);
+  lineWidth = constrain(lineWidth, 0, 10);
+  
+  noStroke();
+  //fill(0, alpha);
+  //rect(width/2, height/2, width, height);
+  
+  //stroke(red, green, blue, 255);
+  strokeWeight(lineWidth * 2);
+  
+  //rect(mouseX, mouseY, speed, speed);
+  line(pmouseX, pmouseY,mouseX, mouseY);
+  //brush1(mouseX, mouseY,speed, speed,lineWidth);
+  //brush2(mouseX, mouseY,speed, speed,lineWidth);
+  //brush3(mouseX, mouseY,speed, speed,lineWidth);
+  //brush4(pmouseX, pmouseY,mouseX, mouseY,lineWidth);
+
+  //brush5(pmouseX, pmouseY,mouseX, mouseY,lineWidth);
+  //brush6(mouseX, mouseY,speed, speed,lineWidth);
+  //brush7(pmouseX, pmouseY,mouseX, mouseY,lineWidth);
+
+  //player.setFilter((float) mouseY/height*5000,mouseX / width);
+  }
+
+}
+
+void mouseReleased(){
+ if(start_button.mouseReleased())
+{
+  showGUI = false;
+  gameStarted = true;
+  playing = true;
+}
+mouseDragged = false;
+  
+}
+
+public void displayGameOver(){
+  textAlign(CENTER, CENTER);
+  textSize(30);
+  text("GameOver", w/2, h/2);
+  
+  textAlign(CENTER, BOTTOM);
+  textSize(25);
+  text("Score: " + score, w/2, h * .75);
+  
+}
+
+public void displayEndScore(){
+ textAlign(CENTER, CENTER); 
+ textSize(30);
+ text("YOU WIN", w/2, h/2);
+  
+ textAlign(CENTER, BOTTOM);
+ textSize(25);
+ text("Score: " + score, w/2, h * .75);
+}
+
+public void displayTitle(){
+  textAlign(CENTER, TOP);
+  textSize(30);
+  text("Welcome to BeatToucher!", w/2, h/4);
+  
+}
+
+
+
+
+
+
